@@ -6,25 +6,66 @@ Copyright John Campbell (jcampbell1)
 Liscense: MIT
 ********************************/
 
-// Set to false to disable delete button and delete POST request.
-$allow_delete = true;
-
-/* Uncomment section below, if you want a trivial password protection */
-
-/*
-$PASSWORD = 'sfm'; 
 session_start();
-if(!$_SESSION['_sfm_allowed']) {
-	// sha1, and random bytes to thwart timing attacks.  Not meant as secure hashing.
-	$t = bin2hex(openssl_random_pseudo_bytes(10));	
-	if($_POST['p'] && sha1($t.$_POST['p']) === sha1($t.$PASSWORD)) {
-		$_SESSION['_sfm_allowed'] = true;
+
+$ALLOW_LOGIN = true;
+$ALLOW_DELETE_DEFAULT = false;
+
+$USERNAME_ADMIN = 'admin';
+$PASSWORD_ADMIN = '12345678'; 
+$USERNAME_GUEST = 'guest';
+$PASSWORD_GUEST = '1234'; 
+	
+if( $ALLOW_LOGIN === true )
+{
+	if(isset($_POST['logout']))
+	{
+		session_destroy();
 		header('Location: ?');
+		exit();
 	}
-	echo '<html><body><form action=? method=post>PASSWORD:<input type=password name=p /></form></body></html>'; 
-	exit;
+
+	if(!$_SESSION['_sfm_allowed']) {
+		// sha1, and random bytes to thwart timing attacks.  Not meant as secure hashing.
+		$t = bin2hex(openssl_random_pseudo_bytes(10));	
+		
+		if(!empty($_POST['u']) && !empty($_POST['p'])){
+			if(($USERNAME_ADMIN === $_POST['u']) && ($_POST['p'] && sha1($t.$_POST['p']) === sha1($t.$PASSWORD_ADMIN))) {
+				$_SESSION['_sfm_allowed'] = true;
+				$_SESSION['_sfm_admin'] = 'administrator';
+				$_SESSION['_sfm_username'] = $USERNAME_ADMIN;
+				header('Location: ?');
+			}
+			
+			if(($USERNAME_GUEST === $_POST['u']) && ($_POST['p'] && sha1($t.$_POST['p']) === sha1($t.$PASSWORD_GUEST))) {
+				$_SESSION['_sfm_allowed'] = true;
+				$_SESSION['_sfm_admin'] = false;
+				$_SESSION['_sfm_username'] = $USERNAME_GUEST;
+				header('Location: ?');
+		}
+		}
+		echo '<style type="text/css">body{background-color:#a7a7a7;font-family:"Roboto",sans-serif}.bx{padding:40px;width:300px;background-color:#F7F7F7;margin:0 auto 10px;border-radius:2px;bx-shadow:0 2px 2px rgba(0,0,0,0.5);overflow:hidden}.bx input[type=submit]{width:100%;display:block;position:relative}.bx input[type=text],input[type=password]{height:44px;font-size:16px;width:100%;margin-bottom:10px;background:#fff;border:1px solid darkgrey;border-top:1px solid darkgrey;padding:0 10px;bx-sizing:border-bx;-moz-bx-sizing:border-bx}.bx input[type=text]:hover,input[type=password]:hover{border:1px solid darkgrey;border-top:1px solid darkgrey;-moz-bx-shadow:inset 0 1px 2px rgba(0,0,0,0.1);-webkit-bx-shadow:inset 0 1px 2px rgba(0,0,0,0.1);bx-shadow:inset 0 1px 2px rgba(0,0,0,0.2)}.l{text-align:center;font-size:16px;font-family:"Roboto";height:32px;padding:0 8px}.l-s{color:#fff;background-color:#4d90fe}.l-s:hover{background-color:#357ae8}</style>';
+		echo '<div class="bx"><form form action="?" method="POST"><input type="text" name="u" placeholder="Username"><input type="password" name="p" placeholder="Password"><input type="submit" name="login" class="l l-s" value="login"></form></div>';
+		exit;
+	}
+
+	// Set to false to disable delete button and delete POST request.
+	$allow_delete = false;
+	if( isset($_SESSION['_sfm_admin']))
+	{
+		if( $_SESSION['_sfm_admin'] === 'administrator' )
+		{
+			$allow_delete = true;
+		}
+	}
+
 }
-*/
+else
+{
+	$allow_delete = $ALLOW_DELETE_DEFAULT;
+}
+
+
 
 // must be in UTF-8 or `basename` doesn't work
 setlocale(LC_ALL,'en_US.UTF-8');
@@ -404,6 +445,9 @@ $(function(){
 		<b>or</b>
 		<input type="file" multiple />
 	</div>
+	<?php if( $ALLOW_LOGIN === true ): ?>
+	<form action="?" method="post" id="logout" /><input type="submit" value="logout : <?php echo $_SESSION['_sfm_username']; ?>" name='logout' /></form>
+	<?php endif; ?>
 	<div id="breadcrumb">&nbsp;</div>
 </div>
 
